@@ -27,7 +27,7 @@ cắt ảnh ra các channel và merge lại
 ## translation
 - sử dụng cv2.warpAffine => dùng matrix 2*3: [[1,0,x],[0,1,y]]
 
-```buildoutcfg
+```python
 M = np.array([[1,0,x],[0,1,y]], dtype=np.float32)
 dst = cv2.warpAffine(img, M, dsize=(img.shape[1], img.shape[0]))
 ```
@@ -43,7 +43,7 @@ opencv sử dụng `cv2.getAffineTransform(pts_1, pts_2)` để tạo matrix t�
 # 4.c. geometric transformation: warpPerspective
 => sử dụng matrix 3*3
 
-```buildoutcfg
+```python
 pts_1 = np.float32([[450, 65], [517, 65], [431, 164], [552, 164]])
 pts_2 = np.float32([[0, 0], [300, 0], [0, 300], [300, 300]])
 M = cv2.getPerspectiveTransform(pts_1, pts_2)
@@ -127,7 +127,7 @@ image blending thường đc sử dụng cho thuật toán Sobel (thuật toán 
 - 1 số loại color space: `BGR, HSV, HSL,CIEL*a*b*,YCbCr` 
 - mình thấy 2 ứng dụng của color space trong việc segmentation color (tách màu cam trong ảnh ô tô, trong book 
 là tách màu skin)
-```buildoutcfg
+```python
 các bước để segment
 - sử dụng cv2.cvtColor để convert space
 - xác định range của màu cần segment (trong vd tách màu cam ô tô => tác giả đã dùng trackbars để xác định range),
@@ -157,7 +157,7 @@ ngoài ra có thể tạo custom color map (đọc sau)
 ![](images/CLAHE vs equalizehist.png)
 
 - chú ý là CLAHE cũng nên làm như equalize hist: ko nên thực hiện trên BGR, mà convert sang color space khác, và thực hiện CLAHE trên `only on the luminance channel`
-```buildoutcfg
+```python
 cla = cv2.createCLAHE(clipLimit=4.0)
 H, S, V = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
 eq_V = cla.apply(V)
@@ -178,7 +178,7 @@ có 4 method: cv2.HISTCMP_xxx (CORREL, CHISQR, INTERSECT, BHATTACHARYYA) => cho 
 - The simplest thresholding methods replace each pixel in the source image with a `black` pixel if the pixel intensity is
 `less` than some predefined constant (the threshold value), or a `white` pixel, if the pixel intensity is `greater` than the threshold value
 
-```buildoutcfg
+```python
 cv2.threshold(src, thresh, maxval, type, dst=None) -> retval, dst
 ```
 
@@ -192,7 +192,7 @@ cv2.threshold(src, thresh, maxval, type, dst=None) -> retval, dst
 - khắc phục điểm yếu của pp threshold trên = cách sử dụng adaptive (ngoài ra có thể dùng thêm bilateFilter - blur để làm ảnh mịn hơn)
 - pp này theo flow: tính threshold theo blocksize thay vì chỉ định thresholg global như pp trên
 
-```buildoutcfg
+```python
 adaptiveThreshold(src, maxValue, adaptiveMethod, thresholdType, blockSize, C[, dst]) -> dst
 ```
 
@@ -204,7 +204,7 @@ adaptiveThreshold(src, maxValue, adaptiveMethod, thresholdType, blockSize, C[, d
 - otsu dùng trong trường hợp ảnh có histogram 2 peak
 - threshold sẽ đc tự tính => vì vậy thresh đc set = 0
 - trường hợp ảnh nhiễu nhiều => vẫn nên dùng filter để làm mịn ảnh, kết quả sẽ tốt hơn
-```buildoutcfg
+```python
 ret, imgResult = cv2.threshold(imgblur,thresh=0, maxval=255, type=cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 ```
 
@@ -214,7 +214,7 @@ ret, imgResult = cv2.threshold(imgblur,thresh=0, maxval=255, type=cv2.THRESH_BIN
 
 # 11.b. threshold using scikit-image
 ngoài ra, có thể sử dụng threshold trong skimage
-```buildoutcfg
+```python
 from skimage.filters import threshold_otsu, threshold_triangle, threshold_sauvola, threshold_niblack
 from skimage import img_as_ubyte
 .......
@@ -227,18 +227,109 @@ cv2.imshow('threshold_otsu', binary)
 # 12. contour detector
 => dùng trong bài toán shape analysis, object detection, recognition
 
+các func dùng: 
+- `cv2.findContours(image, mode, method[, contours[, hierarchy[, offset]]]) -> image, contours, hierarchy` => find contour từ image binary
+- `cv2.drawContours` => draw contour theo từng contours
+
 ## introduce
 - nếu dùng `mode=cv2.RETR_TREE`:
 
 ![](images/contour-01.png) ![](images/contour-hierachy.png)
 
-```buildoutcfg
+```python
 hierachy[i][0] => index của next contour cùng hierachy level (vd hierachy[0][0] = 2 => contour cùng level tiếp theo ở index 2) 
 hierachy[i][1] => index của prev contour cùng hierachy level (vd hierachy[2][1] = 0 => prev contour của contour index 2 là index 0)
 hierachy[i][2] => index của first child (vd hierachy[0][2] = 1 => contour index 1 là con của contour index 0)
 hierachy[i][3] => index của parent (vd hierachy[0][3] = -1 => contour index0 ko có parent, hierachy[3][3] = 2 => contour index 3 có parent là index 2)
 ```
 
-các func dùng: 
-- `cv2.findContours` => find contour từ image binary
-- `cv2.drawContours` => draw contour theo từng contours
+## compress
+khi cv2.findContours, contour trả về có thể nén/ko nén (nén nghĩa là giảm số lượng điểm contour, vd hình chữ nhật thay vì trả về toàn bộ point thì chỉ cần trả về 4 góc là đc) tùy thuộc vào param method:
+- cv2.CHAIN_APPROX_NONE => ko nén
+- cv2.CHAIN_APPROX_SIMPLE => nén
+- cv2.CHAIN_APPROX_..... => nén theo thuật toán (....)
+
+
+## image momment
+định nghĩa momment đọc thêm ở: https://viblo.asia/p/su-dung-opencv-de-tim-diem-chinh-giua-cua-1-hinh-4dbZN8Lm5YM:
+
+- Trong xử lý ảnh, moment của ảnh được dùng để nêu bật đặc trưng hình dạng của một ảnh. Những moment này ghi lại những thuộc tính của hình ảnh, bao gồm diện tích của đối tượng (the area), trọng tâm (centroid), hướng (orientation) và những thuộc tính liên quan khác
+
+=> momment thường đc sử dụng trong image preprocessing, object classification, recognition. 
+```python
+M = cv2.moments(contours[0])
+cX = int(M["m10"] / M["m00"])
+cY = int(M["m01"] / M["m00"])
+```
+- từ momment có thể xác định đc center
+- `m00` là diện tích contour => tương tự vs `cv2.contourArea()`
+- `Roundness` (độ tròn)=> chỉ số để xác định xem contour có fai hình tròn k.
+- ` cv2.arcLength(contour, True)` => tính chu vi đường viền của contour
+- `Eccentricity` (độ lệch tâm) => xác định eclipse?
+- aspect ratio => tỷ lệ chiều rộng và dài của contours => xác định hình vuông/ hình cn?
+- `x, y, w, h = cv2.boundingRect(contour)` => xác định các attribute của hình cn
+
+## Hu Momment
+hu momment của 1 contour sẽ là ko thay đổi, kể là nó dịch chuyển, rotate,.. (trừ giá trị số 7 mà hu momment return)
+
+=> nhưng mục đích của hu momment là gì???
+
+=> ở phần matching contour, có nói mục đích của Hu momment là object matching and recognition
+=> dựa và chỉ số của hu momment để so sánh 2 contour có shape giống nhau k 
+
+```python
+import cv2
+m = cv2.moments(array=cts[0])
+hm = cv2.HuMoments(m = m)
+```
+
+## Zernike moments
+- chưa hiểu là gì
+- opencv k có func để tính toán zernike => fai dùng lib khác như `mahotas`
+
+
+## common contour funcs
+- xác định thông số hình chữ nhật bao quanh contours
+```python
+x,y,w,h = cv2.boundingRect(cts[0])
+```
+
+- vẽ hình chữ nhật có diện tích nhỏ nhất
+```python
+rotated_rect = cv2.minAreaRect(cts[0])
+box = cv2.boxPoints(box = rotated_rect)
+box = np.int0(box)
+cv2.polylines(img, pts=[box], isClosed=True,color=constant.GREEN, thickness=3 ) # vẽ hình khi biết 4 góc
+```
+
+- vẽ hình tròn bao quanh contour
+```python
+(x,y), radius = cv2.minEnclosingCircle(points=cts[0])
+```
+
+- vẽ hình ellipse bao quanh contour
+```python
+ellipse = cv2.fitEllipse(cts[0])
+cv2.ellipse(img, ellipse, constant.YELLOW, 5)
+```
+......
+
+
+## xác định shape của contour
+các bước để xác định shape của contour
+
+1. xác định chu vi của contour `perimeter = cv2.arcLength(c, True)`
+2. xác định epsilon = perimeter * 0.03 (0.03 là kết quả dựa trên việc thử nghiệm -> cho kết quả tốt nhất)
+3. xác định các đỉnh của contour, sử dụng `cv2.approxPolyDP(c, 0.03* perimeter, closed=True)`
+4. dựa vào số đỉnh => dự đoán contour là hình gì
+
+
+## matching contour
+```python
+ret_1 = cv2.matchShapes(contours_circle[0], contour, cv2.CONTOURS_MATCH_I1, 0.0)
+```
+
+các bước để tính matching:
+1. xác định contour của 2 hình cần so sánh
+2. sử dụng `cv2.matchShapes` => 0 là shape hoàn toàn giống nhau
+
