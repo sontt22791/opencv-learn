@@ -82,7 +82,7 @@ có 2 approach:
 
 ## a. haar-cascade
 - cascade có thể detect object khác ngoài face (body, plate,...)
-- có thể download cascade classifier files ở: https://github.com/opencv/opencv/tree/master/data/haarcascades
+- có thể download cascade classifier files ở: `https://github.com/opencv/opencv/tree/master/data/haarcascades`
 ```python
 # cách 1:
 cas = cv2.CascadeClassifier(cascade_file) => đc sử dụng để load classifer từ file

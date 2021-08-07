@@ -68,7 +68,7 @@ sử dụng kernel (filter) để transform ảnh (smoothing, sharpening, edge,.
 
 => trong opencv, dùng `cv2.filter2D` để apply kernel(filter) vào ảnh
 
-## smoothing (làm mịn)
+## blur - smoothing (làm mịn)
 có 1 số cách:
 - dùng custom filter
 - avg blur, gaussian blur, median blur => làm mịn kể cả edge
@@ -127,13 +127,13 @@ image blending thường đc sử dụng cho thuật toán Sobel (thuật toán 
 - 1 số loại color space: `BGR, HSV, HSL,CIEL*a*b*,YCbCr` 
 - mình thấy 2 ứng dụng của color space trong việc segmentation color (tách màu cam trong ảnh ô tô, trong book 
 là tách màu skin)
-```python
+```markdown
 các bước để segment
 - sử dụng cv2.cvtColor để convert space
 - xác định range của màu cần segment (trong vd tách màu cam ô tô => tác giả đã dùng trackbars để xác định range),
 trong ebook tác giả dùng range trong các article)
-- dùng cv2.inRange để define ảnh theo lower/upper range
-- dùng bitwise để merge => tách skin
+- dùng cv2.inRange để define ảnh theo lower/upper range => return binary image
+- dùng bitwise để merge img và mask vừa tạo bằng cv2.inRange => tách skin
 ```
 
 # 9. Color map
@@ -228,7 +228,8 @@ cv2.imshow('threshold_otsu', binary)
 => dùng trong bài toán shape analysis, object detection, recognition
 
 các func dùng: 
-- `cv2.findContours(image, mode, method[, contours[, hierarchy[, offset]]]) -> image, contours, hierarchy` => find contour từ image binary
+- `cv2.findContours(image, mode, method[, contours[, hierarchy[, offset]]]) -> image, contours, hierarchy` => find contour từ image binary 
+=> do vậy có thể dùng `cv2.threshold`, `cv2.inRange` để tạo binary image (cv2.threshold,..), hoặc dùng edge detector??? (cv2.canny,..)
 - `cv2.drawContours` => draw contour theo từng contours
 
 ## introduce
@@ -236,7 +237,7 @@ các func dùng:
 
 ![](images/contour-01.png) ![](images/contour-hierachy.png)
 
-```python
+```markdown
 hierachy[i][0] => index của next contour cùng hierachy level (vd hierachy[0][0] = 2 => contour cùng level tiếp theo ở index 2) 
 hierachy[i][1] => index của prev contour cùng hierachy level (vd hierachy[2][1] = 0 => prev contour của contour index 2 là index 0)
 hierachy[i][2] => index của first child (vd hierachy[0][2] = 1 => contour index 1 là con của contour index 0)
@@ -266,8 +267,8 @@ cY = int(M["m01"] / M["m00"])
 - `Roundness` (độ tròn)=> chỉ số để xác định xem contour có fai hình tròn k.
 - ` cv2.arcLength(contour, True)` => tính chu vi đường viền của contour
 - `Eccentricity` (độ lệch tâm) => xác định eclipse?
-- aspect ratio => tỷ lệ chiều rộng và dài của contours => xác định hình vuông/ hình cn?
-- `x, y, w, h = cv2.boundingRect(contour)` => xác định các attribute của hình cn
+- `x, y, w, h = cv2.boundingRect(contour)` => xác định các info của hình chữ nhật bao quanh contour
+- aspect ratio = w/h (tính ở trên) => tỷ lệ chiều rộng và dài của contours => xác định hình vuông/ hình cn?
 
 ## Hu Momment
 hu momment của 1 contour sẽ là ko thay đổi, kể là nó dịch chuyển, rotate,.. (trừ giá trị số 7 mà hu momment return)
@@ -278,7 +279,6 @@ hu momment của 1 contour sẽ là ko thay đổi, kể là nó dịch chuyển
 => dựa và chỉ số của hu momment để so sánh 2 contour có shape giống nhau k 
 
 ```python
-import cv2
 m = cv2.moments(array=cts[0])
 hm = cv2.HuMoments(m = m)
 ```
