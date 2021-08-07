@@ -73,13 +73,14 @@ net = cv2.dnn.readNetFromCaffe("MobileNetSSD_deploy.prototxt", "MobileNetSSD_dep
 - setinput `net.setInput(blob)`
 - forward `preds = net.forward()`
 
-# 3. face detection, tracking & recognition
-## face detection
+# 3. face detection
+![](images/face.png)
+
 có 2 approach:
 - haar cascade-based
 - deep learning-based
 
-## haar-cascade
+## a. haar-cascade
 - cascade có thể detect object khác ngoài face (body, plate,...)
 - có thể download cascade classifier files ở: https://github.com/opencv/opencv/tree/master/data/haarcascades
 ```python
@@ -90,11 +91,95 @@ face = cas.detectMultiScale(gray) => return list of rectangles
 # cách 2
 cv2.face.getFacesHAAR(img, cascade_file) => return list of rectangles
 ```
-- CascadeClassifier().detectMultiScale(gray) => input là gray, output là list of rectangles => ngoài ra có params để detect object theo range size (minSize, maxSize)
+- CascadeClassifier().detectMultiScale(gray) => input là gray (mình thử bgr vẫn đc), output là list of rectangles => ngoài ra có params để detect object theo range size (minSize, maxSize)
 - face.getFacesHAAR(img, cascade_file) => input là bgr, output là list of rectangles
 
-## deep learning
+## b. deep learning
 - khi inference sử dụng deep learning => opencv sẽ return array có dim cuối cùng là 7, trong đó:
   - detections[0, 0, i, 0] => index của image trong batch 
   - detections[0, 0, i, 2] => confidence
   - detections[0, 0, i, 3:7] => tọa độ (đã normalize)
+
+
+## c. other lib
+ngoài opencv, có thể dùng dlib, face_recognition, cvlib vs các pre-train model để thực hiện face-detection
+- dlib có thể sử dụng để detect object khác ngoài face
+
+# 4. facial landmarks
+xác định các điểm trên khuôn mặt: có thể sử dụng opencv, dlib, face_recognition sử dụng pretrain model
+
+## opencv:
+![](images/facemark.png)
+
+flow:
+- detect face
+- create Facemask
+- load model và fit faces đã detect vào images
+
+có 3 implement:
+`cv2.face.createFacemarkLBF()`, `cv2.face.createFacemarkAAM()`, `cv2.face.createFacemarkKazemi()`
+
+Ngoài ra có thể sử dụng dlib, face_recognition
+
+# 5. face/object tracking
+
+trong các lib trên, chỉ dlib đang implement face/object tracking
+
+flow:
+- init detector (nếu cần)
+- init tracker, sử dụng `dlib.correlation_tracker()` 
+- detect face (có thể sử dụng opencv (cascade,..) hoặc lib khác)
+- khi đã có bbox của face/object => bắt đầu track face/object đó sử dụng `tracker.start_track(frame, bbox)`
+- sau khi đã track, thực hiện việc tracking
+```python
+tracker.update(frame)
+pos = tracker.get_position()
+cv2.rectangle(frame, (int(pos.left()), int(pos.top())), (int(pos.right()), int(pos.bottom())), (0, 255, 0), 3)
+```
+
+# 6. face recognition
+
+## a. opencv
+opencv sử dụng 3 thuật toán cũ: LBPH (Local Binary Patterns Histograms) và 2 thuật toán khác performance kém hơn
+- ngoài ra, LBPH còn hỗ trợ method update() => giúp tiếp tục train khi có data mới
+
+Tuy nhiên algorithm của opencv sử dụng vẫn là pp cũ, performance kém hơn deep learning mà dlib sử dụng.
+
+Flow:
+
+- đầu tiên cũng cần xây dựng face_db và train trên tập db đó theo các bước
+  - detect face
+  - convert to gray (LBPH yêu cầu input là gray)
+  - resize (ko chắc có bắt buộc k)
+  - train
+```python
+faces = [detect_face(f) for f in face_db]
+model.train(faces,labels))
+```
+
+- khi inference, cũng cần thực hiện detect face và convert sang gray, sau đó dùng `model.predict(face)`
+=> return label và confidence
+
+Note:
+- khi sử dụng ảnh jared/ obama trong folder `model` thì predict ra kết quả sai (sai label) => vì vậy mình đã thử step 2 ở dưới (thay đổi ảnh theo clip)
+- mình có sử dụng ảnh tương tự clip (https://www.youtube.com/watch?v=myKXW6SKLzY) => tuy nhiên vấn đề xảy ra là ảnh của `angelina jolie` bị predict sai, trong khi trong clip thì predict đúng?
+- sau đó mình đã thử tạo 1 file notebook để code giống như trong clip thì vẫn sai??? => mình chưa debug đc lỗi này, tuy nhiên khi đảo 2 ảnh `angelina jolie` ở train và test thì lại cho kết quả đúng
+
+## b. dlib
+thuật toán face recognition trong dlib dựa trên deep learning. trong sách sử dụng pretrain ResNet-34 đã train trên 3m faces.,
+đạt 99.38% acc trên labeled faces in the wild database => thuật toán của dlib sử dụng tốt hơn thuật toán cũ của opencv
+
+xây dựng dữ liệu face đã biết:
+- load 1 hoặc nhiều ảnh đã biết làm base
+- detect face  
+- extract face feature (128 dimension)
+- (mình nghĩ có thể save lại feature của face để so sánh về sau)
+
+khi inference:
+- load ảnh
+- detect face
+- extract feature
+- compare vs các face đã biết bằng cách tính distance giữa 2 feature vector
+
+## c. face_recognition
+lib fr sử dụng dlib để thực hiện face recognition ở high level => vì vậy flow là giống nhau, nhưng ko fai custom lại encode face và calculate distance giữa các face

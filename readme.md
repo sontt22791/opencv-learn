@@ -7,12 +7,19 @@ các nguồn mà mình đã học
 
 # 1 số library ngoài opencv có thể tham khảo
 - [scikit-image](https://scikit-image.org/docs/stable/auto_examples/index.html)
-- 
+- [dlib]() (nhớ fai cài cmake và g++ trước) => có thể thực hiện face detection, face/object tracking, face recognition 
+- [face_recognition]()
+- [cvlib]()
+![](images/face.png)
 
 # structure
 - ebook: sách về opencv
 - images: cách ảnh sử dụng trong notes
 - resources: ảnh/video dùng để practice
 - src-course: code mà mình practice của 2 clip youtube
-- src-ebook: code practice của ebook mastering
+- src-mastering-opencv4: code practice của ebook mastering
 - src-original: code gốc của ebook và course youtube
+
+# guide
+- [ebook-mastering-opencv-4.md](ebook-mastering-opencv-4.md)
+- [ebook-mastering-opencv-4-ml.md](ebook-mastering-opencv-4-ml.md)
