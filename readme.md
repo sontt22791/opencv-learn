@@ -10,6 +10,7 @@ các nguồn mà mình đã học
 - [dlib]() (nhớ fai cài cmake và g++ trước) => có thể thực hiện face detection, face/object tracking, face recognition 
 - [face_recognition]()
 - [cvlib]()
+- [imutils](https://github.com/jrosebr1/imutils) => đây là lib của team pyimagesearch.com, có hỗ trợ 1 số func translation, rotate, warpPerspective
 ![](images/face.png)
 
 # structure
@@ -63,3 +64,8 @@ project này sử dụng rus_number_plate cascade của opencv để detect
 project này detect contour bao quanh document, sau đó dùng `cv2.approxPolyDP` để detect các góc và thực hiện warpPerspective
 
 
+# Note
+- four_points_transform (trong link https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/) cũng như trong imutils khác vs Perspective thông thường
+là nó ước lượng chiều dài, rộng của object sau khi align =  max của nó trong ảnh gốc thay vì fai tự define w,h => mặc dù vậy theo mình nó sẽ có nhược điểm là đối vs ảnh quá nghiêng thì 
+nó sẽ align ko đc như mong muốn. => vì vậy khi align nên tính đến aspect ratio để align đc chuẩn hơn (đọc phần `Improving your top-down transform results by computing the aspect ratio` trong link)
+- trong link trên có nói về làm sao để xác định 4 góc của object 1 cách auto => theo mình đang hiểu thì 1 số task cụ thể, có 1 cách là xác định contour và lấy contour có area lớn nhất (có thể fai search thêm)
