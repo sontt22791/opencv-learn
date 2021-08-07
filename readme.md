@@ -69,3 +69,6 @@ project này detect contour bao quanh document, sau đó dùng `cv2.approxPolyDP
 là nó ước lượng chiều dài, rộng của object sau khi align =  max của nó trong ảnh gốc thay vì fai tự define w,h => mặc dù vậy theo mình nó sẽ có nhược điểm là đối vs ảnh quá nghiêng thì 
 nó sẽ align ko đc như mong muốn. => vì vậy khi align nên tính đến aspect ratio để align đc chuẩn hơn (đọc phần `Improving your top-down transform results by computing the aspect ratio` trong link)
 - trong link trên có nói về làm sao để xác định 4 góc của object 1 cách auto => theo mình đang hiểu thì 1 số task cụ thể, có 1 cách là xác định contour và lấy contour có area lớn nhất (có thể fai search thêm)
+- [các phép biến đổi hình học - toán](https://www.vietcs.org/bien-doi-hinh-hoc-geometric-transformation/) => đọc để hiếu về toán trong khi thực hiện translation, rotate, warpAffine,...
+- [tổng hợp các pp image processing - phạm đình khánh](https://phamdinhkhanh.github.io/2020/01/06/ImagePreprocessing.html)
+- [Augmented Reality simple](https://viblo.asia/p/build-ung-dung-augmented-reality-don-gian-voi-opencv-phan-1-RnB5pWaGlPG) => Augmented Reality mình chưa học
